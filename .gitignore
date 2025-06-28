@@ -5,3 +5,5 @@ db.sqlite3
 .env
 *.log
 users/migrations
+uploads/migrations
+media/

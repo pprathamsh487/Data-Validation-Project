@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "users",
+    "uploads",
 ]
 
 MIDDLEWARE = [
@@ -86,7 +87,10 @@ DATABASES = {
         "PORT": "5432",
     }
 }
-
+# Local Media Configuration
+import os
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
