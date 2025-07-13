@@ -3,6 +3,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
+from .models import ETLJob
+from .tasks import process_etl_job
 from .serializers import CsvUploadSerializer, PdfUploadSerializer, ImageUploadSerializer
 
 class UploadCsvView(APIView):
@@ -15,8 +17,17 @@ class UploadCsvView(APIView):
             file = request.FILES.get('file')
             if not file.name.endswith('.csv'):
                 return Response({'error': 'Only CSV files allowed.'}, status=400)
-            serializer.save(user=request.user, status='pending')
-            return Response(serializer.data, status=201)
+            upload = serializer.save(user=request.user, status='pending')
+            etl_job = ETLJob.objects.create(upload=upload, status='pending')
+            # Trigger Celery task
+            process_etl_job.delay(etl_job.id)
+            
+            return Response({
+                'upload_id': upload.id,
+                'etl_job_id': etl_job.id,
+                'status': etl_job.status
+            }, status=201)
+            
         return Response(serializer.errors, status=400)
 
 class UploadPdfView(APIView):
@@ -28,8 +39,16 @@ class UploadPdfView(APIView):
             file = request.FILES.get('file')
             if not file.name.endswith('.pdf'):
                 return Response({'error': 'Only PDF files allowed.'}, status=400)
-            serializer.save(user=request.user, status='pending')
-            return Response(serializer.data, status=201)
+            upload = serializer.save(user=request.user, status='pending')
+            etl_job = ETLJob.objects.create(upload=upload, status='pending')
+            # Trigger Celery task
+            process_etl_job.delay(etl_job.id)
+            
+            return Response({
+                'upload_id': upload.id,
+                'etl_job_id': etl_job.id,
+                'status': etl_job.status
+            }, status=201)
         return Response(serializer.errors, status=400)
 
 class UploadImageView(APIView):
@@ -41,6 +60,14 @@ class UploadImageView(APIView):
             file = request.FILES.get('file')
             if not (file.name.endswith('.jpg') or file.name.endswith('.png') or file.name.endswith('.jpeg')):
                 return Response({'error': 'Only image files allowed.'}, status=400)
-            serializer.save(user=request.user, status='pending')
-            return Response(serializer.data, status=201)
+            upload = serializer.save(user=request.user, status='pending')
+            etl_job = ETLJob.objects.create(upload=upload, status='pending')
+            # Trigger Celery task
+            process_etl_job.delay(etl_job.id)
+            
+            return Response({
+                'upload_id': upload.id,
+                'etl_job_id': etl_job.id,
+                'status': etl_job.status
+            }, status=201)
         return Response(serializer.errors, status=400)

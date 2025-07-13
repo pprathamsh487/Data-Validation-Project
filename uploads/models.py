@@ -21,12 +21,22 @@ class Upload(models.Model):
         return f"{self.file_type} by {self.user.username} at {self.uploaded_at}"
 
 class ETLJob(models.Model):
-    upload = models.OneToOneField(Upload, on_delete=models.CASCADE)
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('processing', 'Processing'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    ]
+
+    upload = models.ForeignKey('Upload', on_delete=models.CASCADE, related_name='etl_jobs')
+    created_at = models.DateTimeField(auto_now_add=True)
     started_at = models.DateTimeField(null=True, blank=True)
-    finished_at = models.DateTimeField(null=True, blank=True)
-    status = models.CharField(max_length=20, default='pending')
-    summary = models.TextField(blank=True)  # e.g., '123 rows, 4 errors'
-    
+    completed_at = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    error_message = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"ETLJob #{self.id} for Upload #{self.upload.id} [{self.status}]"
     class Meta:
         db_table = 'ETL_JOB'
 
