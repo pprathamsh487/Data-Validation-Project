@@ -5,6 +5,8 @@ from rest_framework.test import APIClient
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from rest_framework import status
+from unittest.mock import patch
+from uploads.tasks import process_etl_job
 
 # Create your tests here.
 class UploadTestCase(TestCase):
@@ -30,11 +32,6 @@ class UploadTestCase(TestCase):
     def test_upload_creation_api(self):
         pass
         
-class ETLJobTestCase(TestCase):
-    def setUp(self):
-        self.__job_data = {}
-    def test_ETLJob_creation(self):
-        pass
 class UploadViewTestCase(TestCase):
     def setUp(self):
         self.user = CustomUser.objects.create_user(
@@ -80,3 +77,22 @@ class UploadViewTestCase(TestCase):
         data = {'file': self.image_file, 'file_type': 'image', 'status': 'pending'}
         response = self.client.post(reverse('upload-image'), data, format='multipart')
         self.object_creation_checks(response, 'image')
+        
+class ETLJobTestCase(TestCase):
+    def setUp(self):
+        self.__user_data = {'username' : 'testuser',
+                            'first_name' : 'test',
+                            'last_name' : 'user',
+                            'email' : 'testuser@gmail.com',
+                            'password' : 'test@123'}
+        self.__obj_users_1 = CustomUser.objects.create(**self.__user_data)
+        self.upload = Upload.objects.create(user =self.__obj_users_1, file='dummy.pdf')
+        self.job = ETLJob.objects.create(upload = self.upload)
+    def test_etl_job_defaults_to_pending(self): 
+        self.assertEqual(self.job.status, 'pending')
+        
+    @patch('uploads.tasks.time.sleep', return_value=None)
+    def test_process_etl_job_sets_status(self, _):
+        process_etl_job(self.job.id)
+        self.job.refresh_from_db()
+        self.assertEqual(self.job.status, 'completed')
