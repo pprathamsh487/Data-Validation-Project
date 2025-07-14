@@ -8,12 +8,17 @@ class Upload(models.Model):
         ('pdf', 'PDF Document'),
         ('image', 'Image File'),
     ]
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     file = models.FileField(upload_to='uploads/')
     file_type = models.CharField(max_length=10, choices=FILE_TYPE_CHOICES)
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=20, default='pending')  # pending, processing, completed, failed
+    status = models.CharField(max_length=20,choices=STATUS_CHOICES, default='pending')  # pending, processing, completed, failed
     
     class Meta:
         db_table = 'UPLOAD'
